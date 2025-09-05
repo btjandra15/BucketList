@@ -1,5 +1,5 @@
 import { Text, TextInput, TouchableOpacity, View } from 'react-native'
-import { useSignUp } from '@clerk/clerk-expo'
+import { useSignUp, useUser } from '@clerk/clerk-expo'
 import { Link, useRouter } from 'expo-router'
 import { useState } from 'react'
 import {styles} from '../../assets/styles/auth.styles';
@@ -13,8 +13,7 @@ export default function SignUpScreen() {
   const [pendingVerification, setPendingVerification] = useState(false)
   const [code, setCode] = useState('')
   const [error, setError] = useState('');
-
-  const { isLoaded, signUp, setActive } = useSignUp()
+  const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter()
 
   // Handle submission of sign-up form
@@ -51,14 +50,25 @@ export default function SignUpScreen() {
 
     try {
       // Use the code the user provided to attempt verification
-      const signUpAttempt = await signUp.attemptEmailAddressVerification({
-        code,
-      })
+      const signUpAttempt = await signUp.attemptEmailAddressVerification({code});
 
       // If verification was completed, set the session to active
       // and redirect the user
       if (signUpAttempt.status === 'complete') {
         await setActive({ session: signUpAttempt.createdSessionId })
+        const user = useUser();
+
+        await fetch("/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${signUpAttempt.createdSessionId}`
+          },
+          body: JSON.stringify({
+            clerk_user_id: user?.id,
+          })
+        })
+
         router.replace('/')
       } else {
         // If the status is not complete, check why. User may need to
