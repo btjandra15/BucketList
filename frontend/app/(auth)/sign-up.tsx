@@ -14,6 +14,7 @@ export default function SignUpScreen() {
   const [code, setCode] = useState('')
   const [error, setError] = useState('');
   const { isLoaded, signUp, setActive } = useSignUp();
+  const user = useUser();
   const router = useRouter()
 
   // Handle submission of sign-up form
@@ -56,7 +57,6 @@ export default function SignUpScreen() {
       // and redirect the user
       if (signUpAttempt.status === 'complete') {
         await setActive({ session: signUpAttempt.createdSessionId })
-        const user = useUser();
 
         await fetch("/api/users", {
           method: "POST",
